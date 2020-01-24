@@ -1,6 +1,16 @@
 const usuarios = require('../models').usuarios;
 
 
+//paquete para generar json-web-tokens
+// const jwt = require('jsonwebtoken');
+
+const jwt = require('../services/jwt');
+
+//Semilla de token
+const SEED = require('../config/config').SEED;
+
+
+
 function guardar(req,res){
     usuarios.create(req.body)
     .then(usuario => {
@@ -19,6 +29,7 @@ function guardar(req,res){
 }
 
 function login(req,res){
+   
     usuarios.findOne({
         where: {
             usuario: req.body.usuario,
@@ -26,12 +37,22 @@ function login(req,res){
         }
     })
     .then(usuario => {
-
+        // let token = jwt.sign({ usuario: usuario }, SEED, {expiresIn: 14400}); 
+    
         if(usuario){
-              res.status(200).json({
+
+            if(req.body.token){
+                 res.status(200).json({
                   ok:true,
-                  usuario
+                  token: jwt.createToken(usuario)
               });
+            }else{
+                res.status(200).json({
+                    ok:true,
+                    usuario
+                });
+            }
+             
         }else {
             res.status(401).json({
                 ok:false,
@@ -48,7 +69,24 @@ function login(req,res){
     })
 }
 
+function getAll(req,res){
+    usuarios.findAll()
+    .then(usuarios => {
+        res.status(200).json({
+            ok:true,
+            usuarios
+        });
+    })
+    .catch(err => {
+        res.status(500).json({
+            ok:false,
+            message: 'Error al buscar usuarios'
+        });
+    })
+}
+
 module.exports = {
     guardar,
-    login
+    login,
+    getAll
 }
